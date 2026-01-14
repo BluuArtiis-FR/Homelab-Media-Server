@@ -133,12 +133,13 @@ export const SERVICE_MANIFEST = {
     doc_url: "https://tdarr.io/docs", // Official documentation
     expose: true, port: 8080
   },
-  "tautulli": {
+  "jellystat": {
     group: "media",
-    name: "Tautulli",
-    description: "Statistiques pour serveur Plex (peut être adapté pour Jellyfin).",
-    doc_url: "https://github.com/Tautulli/Tautulli/wiki", // Official documentation
-    expose: true, port: 8181
+    name: "Jellystat",
+    description: "Statistiques et suivi d'activité pour votre serveur Jellyfin.",
+    doc_url: "https://github.com/jellystat/jellystat",
+    dependencies: ["jellyfin"],
+    expose: true, port: 8085
   },
 
   // --- CLOUD GROUP ---

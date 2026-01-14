@@ -113,10 +113,10 @@ La méthode la plus simple pour commencer : [**Accéder au Configurateur →**](
       <td>Automatisation du transcodage.</td>
     </tr>
     <tr>
-      <td align="center"><img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/tautulli.png" alt="Tautulli" width="24"></td>
-      <td>Tautulli</td>
+      <td align="center"><img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/jellystat.png" alt="Jellystat" width="24"></td>
+      <td>Jellystat</td>
       <td>Média</td>
-      <td>Statistiques pour serveur Plex/Jellyfin.</td>
+      <td>Statistiques et suivi d'activité pour Jellyfin.</td>
     </tr>
     <tr><td colspan=4 align="center"><b>☁️ Cloud Personnel & Fichiers</b></td></tr>
     <tr>
