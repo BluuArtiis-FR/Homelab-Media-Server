@@ -1,4 +1,4 @@
-import './App.css';
+import './index.css';
 import { ConfigProvider } from './context/ConfigContext';
 import ConfigurationPage from './pages/ConfigurationPage';
 
