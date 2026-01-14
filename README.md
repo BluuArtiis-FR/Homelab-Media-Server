@@ -15,9 +15,7 @@
 
 ## 🚀 Démarrage Rapide (Configurateur Web)
 
-La méthode la plus simple pour commencer est d'utiliser le configurateur web.
-
-*(Le lien sera ajouté ici après le déploiement sur GitHub Pages)*
+La méthode la plus simple pour commencer est d'utiliser le configurateur web : [**Accéder au Configurateur →**](https://bluuartiis-fr.github.io/Homelab-Media-Server/)
 
 1.  Accédez à l'URL du configurateur.
 2.  Sélectionnez les services que vous souhaitez installer.
