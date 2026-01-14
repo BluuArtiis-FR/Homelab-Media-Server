@@ -27,19 +27,6 @@ La méthode la plus simple pour commencer : [**Accéder au Configurateur →**](
 
 ![image](https://github.com/user-attachments/assets/53213c6b-6b21-4f10-a24a-10ce6531a7c5)
 
-## 🏗️ Architecture du Configurateur
-
-Le configurateur web simplifie la création de votre environnement en quelques clics.
-
-```mermaid
-graph TD
-    A[Vous] --> B{1. Sélection des services via l'UI};
-    B --> C(2. Génération d'un package .zip);
-    C --> D[Contenu : docker-compose.yml + .env];
-    A --> E(3. Téléchargement du .zip);
-    E --> F[4. Déploiement sur votre serveur via `docker-compose up -d`];
-```
-
 ## 📦 Services Disponibles
 
 <details>
