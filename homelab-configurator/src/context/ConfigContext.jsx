@@ -29,6 +29,11 @@ import { generateDockerComposeContent } from '../utils/dockerComposeGenerator';
 export const ConfigProvider = ({ children }) => {
   const [selectedServices, setSelectedServices] = useState(new Set());
   const [configValues, setConfigValues] = useState(initialGlobalConfig);
+  const [pathMode, setPathMode] = useState('default'); // 'default' or 'custom'
+
+  const togglePathMode = () => {
+    setPathMode(prev => (prev === 'default' ? 'custom' : 'default'));
+  };
 
   const defaultPaths = useMemo(() => {
     const baseDir = configValues.PROJECT_BASE_DIR || initialGlobalConfig.PROJECT_BASE_DIR;
@@ -42,11 +47,13 @@ export const ConfigProvider = ({ children }) => {
   }, [configValues.PROJECT_BASE_DIR]);
 
   useEffect(() => {
-    setConfigValues(prev => ({
-      ...prev,
-      ...defaultPaths
-    }));
-  }, [defaultPaths]);
+    if (pathMode === 'default') {
+      setConfigValues(prev => ({
+        ...prev,
+        ...defaultPaths
+      }));
+    }
+  }, [defaultPaths, pathMode]);
 
   const getRequiredDependencies = (serviceKey, manifest) => {
     let deps = new Set();
@@ -232,6 +239,9 @@ certificatesResolvers:
   const value = {
     selectedServices,
     configValues,
+    pathMode,
+    togglePathMode,
+    defaultPaths,
     servicesByGroup: useMemo(() => {
         const groups = {};
         for (const serviceKey in SERVICE_MANIFEST) {

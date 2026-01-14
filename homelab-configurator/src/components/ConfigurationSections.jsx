@@ -3,7 +3,77 @@ import { Wand2, KeyRound, HelpCircle } from 'lucide-react';
 import { SERVICE_MANIFEST } from '../services';
 
 const ConfigurationSections = () => {
-  const { configValues, selectedServices, handleInputChange, setRandomValue } = useConfig();
+  const { configValues, selectedServices, handleInputChange, setRandomValue, pathMode, togglePathMode, defaultPaths } = useConfig();
+
+  const renderGeneralConfig = () => {
+    const commonFields = {
+      DOMAIN: "Nom de domaine principal",
+      ACME_EMAIL: "Email pour les certificats SSL",
+      TZ: "Fuseau horaire (ex: Europe/Paris)",
+      PUID: "User ID (PUID)",
+      PGID: "Group ID (PGID)"
+    };
+
+    return (
+      <>
+        {Object.entries(commonFields).map(([key, label]) => (
+          <div key={key}>
+            <label htmlFor={key} className="block text-sm font-medium text-gray-700">{label}</label>
+            <div className="mt-1">
+              <input type="text" name={key} id={key}
+                className="block w-full sm:text-sm rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                value={configValues[key] || ''}
+                onChange={handleInputChange}
+              />
+            </div>
+          </div>
+        ))}
+        
+        <div className="md:col-span-2 border-t pt-4">
+          <div className="flex items-center">
+            <input
+              id="custom-paths"
+              name="custom-paths"
+              type="checkbox"
+              className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
+              checked={pathMode === 'custom'}
+              onChange={togglePathMode}
+            />
+            <label htmlFor="custom-paths" className="ml-2 block text-sm font-medium text-gray-900">
+              Personnaliser les chemins des dossiers
+            </label>
+          </div>
+        </div>
+
+        {pathMode === 'default' ? (
+          <div className="md:col-span-2">
+            <label htmlFor="PROJECT_BASE_DIR" className="block text-sm font-medium text-gray-700">Dossier de base du projet</label>
+            <div className="mt-1">
+              <input type="text" name="PROJECT_BASE_DIR" id="PROJECT_BASE_DIR"
+                className="block w-full sm:text-sm rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                value={configValues.PROJECT_BASE_DIR || ''}
+                onChange={handleInputChange}
+              />
+            </div>
+          </div>
+        ) : (
+          Object.keys(defaultPaths).map(key => (
+            <div key={key}>
+              <label htmlFor={key} className="block text-sm font-medium text-gray-700">{key}</label>
+              <div className="mt-1">
+                <input type="text" name={key} id={key}
+                  className="block w-full sm:text-sm rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  value={configValues[key] || ''}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+          ))
+        )}
+      </>
+    );
+  };
+
 
   const renderNetworkConfigFields = () => {
     const fieldsToRender = [];
@@ -120,28 +190,7 @@ const ConfigurationSections = () => {
             <h3 className="font-semibold text-lg text-slate-900">Configuration Générale</h3>
         </header>
         <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-            {Object.entries({
-                PROJECT_BASE_DIR: "Dossier de base du projet sur le serveur",
-                DOMAIN: "Nom de domaine principal",
-                ACME_EMAIL: "Email pour les certificats SSL",
-                TZ: "Fuseau horaire (ex: Europe/Paris)",
-                PUID: "User ID (PUID)",
-                PGID: "Group ID (PGID)"
-            }).map(([key, label]) => (
-                 <div key={key}>
-                    <label htmlFor={key} className="block text-sm font-medium text-gray-700">{label}</label>
-                    <div className="mt-1">
-                        <input
-                            type="text"
-                            name={key}
-                            id={key}
-                            className="block w-full sm:text-sm rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                            value={configValues[key] || ''}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-                </div>
-            ))}
+            {renderGeneralConfig()}
         </div>
       </div>
 
