@@ -217,16 +217,7 @@ La méthode la plus simple pour commencer : [**Accéder au Configurateur →**](
 
 Cette méthode est recommandée pour les utilisateurs qui souhaitent cloner l'intégralité du projet et gérer leur configuration manuellement.
 
-```bash
-# 1. Cloner le projet
-git clone https://github.com/BluuArtiis-FR/Homelab-Media-Server.git
-cd Homelab-Media-Server
+Pour des instructions détaillées sur l'installation, la configuration du fichier `.env` et l'utilisation des profils, consultez notre guide complet :
 
-# 2. Configurer les services
-# Copiez le fichier d'exemple et modifiez-le pour activer les profils des services souhaités.
-cp .env.example .env
-nano .env
+➡️ [**Consulter le Guide d'Utilisation Avancée**](./docs/GUIDE_AVANCE.md)
 
-# 3. Lancer l'installation et le démarrage
-make install
-```
