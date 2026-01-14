@@ -1,9 +1,34 @@
+<div align="center">
+
 # Homelab-Media-Server
 
-**Homelab-Media-Server** est un projet conçu pour simplifier radicalement le déploiement et la gestion d'un serveur personnel (homelab) grâce à Docker. Il offre deux approches pour s'adapter à tous les niveaux de compétence :
+**Un outil pour déployer facilement un serveur média personnel avec Docker, via une UI web ou en CLI.**
 
-1.  **Un Configurateur Web Intuitif** : Idéal pour les débutants, une interface web en React permet de sélectionner les services désirés (Jellyfin, Sonarr, Radarr, etc.), de personnaliser les ports et les volumes, puis de télécharger un package `docker-compose.yml` et `.env` prêt à l'emploi.
-2.  **Une Configuration CLI Avancée** : Pour les utilisateurs expérimentés, le projet peut être cloné entièrement. Un `Makefile` et un `docker-compose.yml` principal utilisant les profils Docker permettent un contrôle total sur l'ensemble des services disponibles.
+</div>
+
+<p align="center">
+  <a href="https://github.com/BluuArtiis-FR/Homelab-Media-Server/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/BluuArtiis-FR/Homelab-Media-Server?style=for-the-badge" alt="Licence">
+  </a>
+  <a href="https://github.com/BluuArtiis-FR/Homelab-Media-Server/actions/workflows/pages/pages-build-deployment">
+    <img src="https://img.shields.io/github/actions/workflow/status/BluuArtiis-FR/Homelab-Media-Server/pages/pages-build-deployment?label=D%C3%A9ploiement&style=for-the-badge" alt="Statut du Déploiement">
+  </a>
+</p>
+
+---
+
+**Homelab-Media-Server** est un projet conçu pour simplifier radicalement le déploiement et la gestion d'un serveur personnel (homelab) grâce à Docker. Il offre deux approches pour s'adapter à tous les niveaux de compétence.
+
+## 🚀 Accéder au Configurateur Web
+
+La méthode la plus simple pour commencer : [**Accéder au Configurateur →**](https://bluuartiis-fr.github.io/Homelab-Media-Server/)
+
+## 📸 Aperçu
+
+*(Ici, vous pourrez ajouter une capture d'écran du configurateur en action !)*
+
+![image](https://github.com/user-attachments/assets/53213c6b-6b21-4f10-a24a-10ce6531a7c5)
+
 
 ## ✨ Fonctionnalités
 
@@ -12,16 +37,6 @@
 - **Deux Workflows** : Une UI simple pour commencer, et une CLI puissante pour un contrôle total.
 - **Basé sur Docker** : Chaque service est isolé, facile à maintenir et à mettre à jour.
 - **Open Source** : Entièrement gratuit et modifiable.
-
-## 🚀 Démarrage Rapide (Configurateur Web)
-
-La méthode la plus simple pour commencer est d'utiliser le configurateur web : [**Accéder au Configurateur →**](https://bluuartiis-fr.github.io/Homelab-Media-Server/)
-
-1.  Accédez à l'URL du configurateur.
-2.  Sélectionnez les services que vous souhaitez installer.
-3.  Personnalisez les options de base (ports, chemins des fichiers).
-4.  Cliquez sur "Générer & Télécharger" pour obtenir votre fichier `.zip`.
-5.  Décompressez le fichier sur votre serveur, et lancez la commande `docker-compose up -d`.
 
 ## 🛠️ Installation Avancée (CLI)
 
@@ -45,6 +60,3 @@ make install
 
 - **Backend** : Docker, Docker Compose, Makefile
 - **Frontend** : React, Vite, Tailwind CSS
-
----
-*Ce projet est géré et maintenu par la communauté. N'hésitez pas à contribuer !*
