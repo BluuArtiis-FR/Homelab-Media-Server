@@ -1,14 +1,12 @@
 import React from 'react';
 import { useConfig } from '../hooks/useConfig';
-import { Download, Loader2, Package, Zap, Wand2 } from 'lucide-react';
+import { Download, Loader2, Package, Wand2 } from 'lucide-react';
 
 const Header = () => {
   const { selectedServices, generatePackage } = useConfig();
   const generating = false; // Placeholder for now
 
   const appsCount = selectedServices.size;
-  // Placeholder for modules count, can be implemented later
-  const modulesEnabled = 0; 
 
   return (
     <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-lg border-b border-slate-200/50">

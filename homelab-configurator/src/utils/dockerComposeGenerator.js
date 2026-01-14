@@ -48,7 +48,7 @@ export const generateDockerComposeContent = (selectedServices, configValues, ser
     }
 
     selectedServices.forEach(sKey => {
-      const serviceDef = SERVICE_MANIFEST[sKey];
+      const serviceDef = serviceManifest[sKey];
       if (serviceDef) {
         // This is a simplified version based on the original logic.
         // It assumes an image property exists in the manifest, which needs to be added.
