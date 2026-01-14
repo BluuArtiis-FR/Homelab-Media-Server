@@ -24,6 +24,8 @@ const generateRandomString = (length = 32) => {
   return result;
 };
 
+import { generateDockerComposeContent } from '../utils/dockerComposeGenerator';
+
 export const ConfigProvider = ({ children }) => {
   const [selectedServices, setSelectedServices] = useState(new Set());
   const [configValues, setConfigValues] = useState(initialGlobalConfig);
@@ -148,119 +150,6 @@ export const ConfigProvider = ({ children }) => {
       setConfigValues(prev => ({ ...prev, ...newValues }));
     }
   }, [selectedServices]);
-
-  const generateDockerComposeContent = (selectedServices, configValues) => {
-    let dockerComposeContent = `version: '3.8'\n\nservices:\n`;
-    let servicesBlock = '';
-    let volumesBlock = '';
-    let networksBlock = '';
-
-    const requiredNetworks = new Set();
-    const requiredVolumes = new Set();
-
-    const baseNetworkName = configValues.PROJECT_BASE_DIR.replace(/\//g, '_').replace(/^_/, '') + '_network';
-    requiredNetworks.add(baseNetworkName);
-
-    // Check if Traefik is needed (if domain and email are provided for ACME)
-    const useTraefik = configValues.DOMAIN && configValues.ACME_EMAIL;
-    if (useTraefik) {
-      servicesBlock += `  traefik:\n`;
-      servicesBlock += `    image: traefik:v2.10\n`; // Using a stable Traefik v2 image
-      servicesBlock += `    container_name: traefik\n`;
-      servicesBlock += `    restart: unless-stopped\n`;
-      servicesBlock += `    command:\n`;
-      servicesBlock += `      - --providers.docker.network=${baseNetworkName}\n`;
-      servicesBlock += `      - --log.level=INFO\n`;
-      servicesBlock += `      - --api.dashboard=true\n`;
-      servicesBlock += `      - --providers.docker=true\n`;
-      servicesBlock += `      - --providers.docker.exposedbydefault=false\n`;
-      servicesBlock += `      - --entrypoints.web.address=:80\n`;
-      servicesBlock += `      - --entrypoints.websecure.address=:443\n`;
-      servicesBlock += `      - --entrypoints.web.http.redirections.entrypoint.to=websecure\n`;
-      servicesBlock += `      - --entrypoints.web.http.redirections.entrypoint.scheme=https\n`;
-      servicesBlock += `      - --certificatesresolvers.myresolver.acme.email=${configValues.ACME_EMAIL}\n`;
-      servicesBlock += `      - --certificatesresolvers.myresolver.acme.storage=/etc/traefik/acme.json\n`;
-      servicesBlock += `      - --certificatesresolvers.myresolver.acme.httpchallenge=true\n`;
-      servicesBlock += `      - --certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web\n`;
-      servicesBlock += `    ports:\n`;
-      servicesBlock += `      - "80:80"\n`;
-      servicesBlock += `      - "443:443"\n`;
-      servicesBlock += `      - "8080:8080" # Traefik dashboard\n`;
-      servicesBlock += `    volumes:\n`;
-      servicesBlock += `      - /var/run/docker.sock:/var/run/docker.sock:ro\n`;
-      servicesBlock += `      - ${configValues.PROJECT_BASE_DIR}/acme.json:/etc/traefik/acme.json\n`; // Persistent ACME storage
-      servicesBlock += `    networks:\n      - ${baseNetworkName}\n\n`;
-
-      requiredVolumes.add('acme.json'); // This will be created as an empty file later
-    }
-
-
-    // Build services block for selected services
-    selectedServices.forEach(sKey => {
-      const serviceDef = SERVICE_MANIFEST[sKey];
-      if (serviceDef) {
-        servicesBlock += `  ${sKey}:\n`;
-        servicesBlock += `    image: ${serviceDef.image || sKey}:latest\n`; // Assuming image name matches service key for now
-        servicesBlock += `    container_name: ${sKey}\n`;
-        servicesBlock += `    restart: unless-stopped\n`;
-
-        // Add networks
-        servicesBlock += `    networks:\n      - ${baseNetworkName}\n`;
-
-        // Add environment variables
-        if (serviceDef.env_vars && serviceDef.env_vars.length > 0) {
-          servicesBlock += `    environment:\n`;
-          serviceDef.env_vars.forEach(envVar => {
-            const varName = envVar.link_to || envVar.name;
-            const value = configValues[varName] || '';
-            servicesBlock += `      - ${varName}=${value}\n`;
-          });
-        }
-
-        // Add Traefik labels if Traefik is used and service is exposed via Traefik
-        if (useTraefik && serviceDef.expose && configValues[`${sKey}_expose_traefik`]) {
-          const subdomain = configValues[`${sKey}_custom_subdomain`] || sKey;
-          const serviceDomain = `${subdomain}.${configValues.DOMAIN}`;
-          servicesBlock += `    labels:\n`;
-          servicesBlock += `      - "traefik.enable=true"\n`;
-          servicesBlock += `      - "traefik.http.routers.${sKey}.rule=Host(\`${serviceDomain}\`)"\n`;
-          servicesBlock += `      - "traefik.http.routers.${sKey}.entrypoints=websecure"\n`;
-          servicesBlock += `      - "traefik.http.routers.${sKey}.service=${sKey}-service"\n`;
-          servicesBlock += `      - "traefik.http.routers.${sKey}.tls=true"\n`;
-          servicesBlock += `      - "traefik.http.routers.${sKey}.tls.certresolver=myresolver"\n`;
-          servicesBlock += `      - "traefik.http.services.${sKey}-service.loadbalancer.server.port=${serviceDef.port || 80}"\n`; // Assuming port 80 if not specified
-        }
-
-        // Add volumes (placeholder for now, will refine later)
-        const serviceConfigPath = `${configValues.PROJECT_BASE_DIR}/config/${sKey}`;
-        const serviceDataPath = `${configValues.PROJECT_BASE_DIR}/data/${sKey}`;
-        servicesBlock += `    volumes:\n`;
-        servicesBlock += `      - ${serviceConfigPath}:/config\n`; // Placeholder: map to a generic /config
-        servicesBlock += `      - ${serviceDataPath}:/data\n`; // Placeholder: map to a generic /data
-
-      }
-    });
-
-    dockerComposeContent += servicesBlock;
-    
-    // Add networks definition
-    networksBlock = `\nnetworks:\n`;
-    requiredNetworks.forEach(net => {
-      networksBlock += `  ${net}:\n    driver: bridge\n`;
-    });
-    dockerComposeContent += networksBlock;
-
-    // Add volumes definition (for named volumes)
-    if (requiredVolumes.size > 0) {
-      volumesBlock = `\nvolumes:\n`;
-      requiredVolumes.forEach(vol => {
-        volumesBlock += `  ${vol}:\n    driver: local\n`;
-      });
-      dockerComposeContent += volumesBlock;
-    }
-
-    return dockerComposeContent;
-  };
 
   const generateTraefikYamlContent = (configValues) => {
     return `api:

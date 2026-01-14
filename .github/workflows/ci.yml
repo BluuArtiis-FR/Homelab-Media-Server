@@ -1,4 +1,4 @@
-name: Linting
+name: CI - Configurator
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  lint-configurator:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -15,8 +15,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-      - name: Install dependencies and lint
+      - name: Install dependencies, lint and test
         run: |
           cd homelab-configurator
           npm install
           npm run lint
+          npm run test -- --run # Use --run flag to prevent vitest from watching
