@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useConfig } from '../hooks/useConfig';
 import { SERVICE_GROUPS } from '../services';
 import { ChevronDown, ChevronUp } from 'lucide-react';

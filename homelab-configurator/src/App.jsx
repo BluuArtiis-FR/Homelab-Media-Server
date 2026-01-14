@@ -1,4 +1,4 @@
-import React from 'react';
+import './App.css';
 import { ConfigProvider } from './context/ConfigContext';
 import ConfigurationPage from './pages/ConfigurationPage';
 

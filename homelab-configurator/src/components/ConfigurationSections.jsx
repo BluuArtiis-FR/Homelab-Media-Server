@@ -1,4 +1,3 @@
-import React from 'react';
 import { useConfig } from '../hooks/useConfig';
 import { Wand2, KeyRound, HelpCircle } from 'lucide-react';
 import { SERVICE_MANIFEST } from '../services';

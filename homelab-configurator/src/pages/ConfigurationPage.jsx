@@ -1,4 +1,3 @@
-import React from 'react';
 import { useConfig } from '../hooks/useConfig';
 import Header from '../components/Header';
 import ServiceSelector from '../components/ServiceSelector';

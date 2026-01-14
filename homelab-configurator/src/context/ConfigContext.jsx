@@ -1,4 +1,4 @@
-import React, { createContext, useState, useMemo, useEffect } from 'react';
+import { createContext, useState, useMemo, useEffect } from 'react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { SERVICE_MANIFEST } from '../services';
@@ -149,7 +149,7 @@ export const ConfigProvider = ({ children }) => {
     if (needsUpdate) {
       setConfigValues(prev => ({ ...prev, ...newValues }));
     }
-  }, [selectedServices]);
+  }, [selectedServices, configValues]);
 
   const generateTraefikYamlContent = (configValues) => {
     return `api:

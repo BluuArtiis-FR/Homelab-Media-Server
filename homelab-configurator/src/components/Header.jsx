@@ -1,4 +1,3 @@
-import React from 'react';
 import { useConfig } from '../hooks/useConfig';
 import { Download, Loader2, Package, Wand2 } from 'lucide-react';
 
