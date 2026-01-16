@@ -2,6 +2,10 @@
 
 Bienvenue sur le Homelab Media Server Configurator ! Cet outil vous aide à générer facilement un fichier `docker-compose.yml` personnalisé pour votre serveur multimédia auto-hébergé, en choisissant parmi une sélection de services populaires.
 
+## Accéder au configurateur
+
+Vous pouvez accéder et utiliser le configurateur en ligne ici : [Homelab Media Server Configurator](https://BluuArtiis-FR.github.io/Homelab-Media-Server)
+
 ## Fonctionnalités
 
 *   **Sélection de Services** : Choisissez les applications que vous souhaitez inclure dans votre stack.
@@ -23,7 +27,7 @@ Bienvenue sur le Homelab Media Server Configurator ! Cet outil vous aide à gén
 *   **Cloud/Fichiers** : Nextcloud
 *   *Et bien d'autres à venir !*
 
-## Comment utiliser
+## Comment utiliser les fichiers générés
 
 1.  **Choisissez vos services** : Cochez les services que vous souhaitez inclure dans votre stack.
 2.  **Configurez les paramètres** : Remplissez les informations globales et ajustez les variables spécifiques à chaque service.
