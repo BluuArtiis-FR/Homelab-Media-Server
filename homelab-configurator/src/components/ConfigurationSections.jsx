@@ -6,7 +6,6 @@ const ConfigurationSections = () => {
   const { configValues, selectedServices, handleInputChange, setRandomValue, pathMode, togglePathMode, defaultPaths } = useConfig();
 
   const renderGeneralConfig = () => {
-    const renderGeneralConfig = () => {
     const commonFields = [
       { key: "DOMAIN", label: "Nom de domaine principal", type: "text", help: "Ex: monhomelab.com. Nécessaire pour l'accès externe et Traefik.", validation: (value) => value === '' || /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value) },
       { key: "ACME_EMAIL", label: "Email pour les certificats SSL", type: "email", help: "Email pour l'émission des certificats SSL Let's Encrypt (via Traefik).", validation: (value) => value === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) },

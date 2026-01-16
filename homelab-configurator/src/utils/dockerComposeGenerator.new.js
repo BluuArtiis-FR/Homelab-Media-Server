@@ -108,7 +108,7 @@ export const generateDockerCompose = (selectedServiceKeys, globalConfig) => {
       serviceDef.env_vars.forEach(envVar => {
         let value = envVar.value;
         if (envVar.type === 'secret') {
-          value = `${${envVar.link_to || envVar.name}}`; // Use shell variable for secrets
+          value = `\${${envVar.link_to || envVar.name}}`; // Use shell variable for secrets
         } else if (envVar.value) {
           // Replace placeholders like PUID, PGID, Paths, Timezone
           value = value
@@ -177,7 +177,7 @@ export const generateDockerCompose = (selectedServiceKeys, globalConfig) => {
 
       serviceConfig.labels = {
         'traefik.enable': 'true',
-        [`traefik.http.routers.${serviceName}.rule`]: `Host(`${serviceDomain}`)`,
+        [`traefik.http.routers.${serviceName}.rule`]: `Host('${serviceDomain}')`,
         [`traefik.http.routers.${serviceName}.entrypoints`]: 'websecure',
         [`traefik.http.routers.${serviceName}.tls.certresolver`]: 'myresolver',
         [`traefik.http.services.${serviceName}-service.loadbalancer.server.port`]: String(exposePort),
