@@ -16,7 +16,7 @@ const ConfigurationPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <Header />
       <main className="max-w-7xl mx-auto px-4 py-8">
         <ServiceSelector />

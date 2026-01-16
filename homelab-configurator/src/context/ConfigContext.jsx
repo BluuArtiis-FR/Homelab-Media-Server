@@ -1,18 +1,23 @@
 import { createContext, useState, useMemo, useEffect } from 'react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { SERVICE_MANIFEST } from '../services';
+import { SERVICE_GROUPS, SERVICE_MANIFEST } from '../services';
+import { generateDockerCompose } from '../utils/dockerComposeGenerator.new.js';
 
 const ConfigContext = createContext();
 
 const initialGlobalConfig = {
-  DOMAIN: '',
-  ACME_EMAIL: '',
+  DOMAIN: 'example.com', // Valeur par défaut plus pertinente
+  ACME_EMAIL: 'votre_email@example.com', // Valeur par défaut
   TZ: 'Europe/Paris',
   PUID: '1000',
   PGID: '1000',
   RESTART_POLICY: 'unless-stopped',
   PROJECT_BASE_DIR: '/opt/homelab',
+  // Placeholders for new path management
+  CONFIG_PATH: '/opt/homelab/config', // Valeur par défaut
+  DATA_PATH: '/opt/homelab/data', // Valeur par défaut
+  PROJECT_NAME: 'homelab',
 };
 
 const generateRandomString = (length = 32) => {
@@ -24,37 +29,24 @@ const generateRandomString = (length = 32) => {
   return result;
 };
 
-import { generateDockerComposeContent } from '../utils/dockerComposeGenerator';
-
 export const ConfigProvider = ({ children }) => {
   const [selectedServices, setSelectedServices] = useState(new Set());
   const [configValues, setConfigValues] = useState(initialGlobalConfig);
-  const [pathMode, setPathMode] = useState('default'); // 'default' or 'custom'
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
-  const togglePathMode = () => {
-    setPathMode(prev => (prev === 'default' ? 'custom' : 'default'));
+  const toggleDarkMode = () => {
+    setIsDarkMode(prev => !prev);
   };
 
-  const defaultPaths = useMemo(() => {
-    const baseDir = configValues.PROJECT_BASE_DIR || initialGlobalConfig.PROJECT_BASE_DIR;
-    return {
-      CONFIG_PATH: `${baseDir}/config`,
-      DATA_PATH: `${baseDir}/data`,
-      DOWNLOADS_PATH: `${baseDir}/downloads`,
-      MEDIA_PATH: `${baseDir}/media`,
-      UPLOAD_PATH: `${baseDir}/uploads`,
-    };
-  }, [configValues.PROJECT_BASE_DIR]);
-
   useEffect(() => {
-    if (pathMode === 'default') {
-      setConfigValues(prev => ({
-        ...prev,
-        ...defaultPaths
-      }));
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
-  }, [defaultPaths, pathMode]);
+  }, [isDarkMode]);
 
+  // --- Dependency resolution ---
   const getRequiredDependencies = (serviceKey, manifest) => {
     let deps = new Set();
     const toCheck = [serviceKey];
@@ -75,29 +67,21 @@ export const ConfigProvider = ({ children }) => {
     return deps;
   };
 
+  // --- State updaters ---
   const updateSelection = (servicesToUpdate, isChecked) => {
     const newSelected = new Set(selectedServices);
     if (isChecked) {
       servicesToUpdate.forEach(key => {
         newSelected.add(key);
+        // Dependencies are now resolved at generation time, but we can still pre-select them for UI feedback
         getRequiredDependencies(key, SERVICE_MANIFEST).forEach(dep => newSelected.add(dep));
       });
     } else {
-      const allDepsToKeep = new Set();
-      newSelected.forEach(key => {
-        if (!servicesToUpdate.has(key)) {
-          getRequiredDependencies(key, SERVICE_MANIFEST).forEach(dep => allDepsToKeep.add(dep));
-        }
-      });
       servicesToUpdate.forEach(key => {
         newSelected.delete(key);
-        const depsOfKey = getRequiredDependencies(key, SERVICE_MANIFEST);
-        depsOfKey.forEach(depKey => {
-          if (!allDepsToKeep.has(depKey)) {
-            newSelected.delete(depKey);
-          }
-        });
       });
+      // Simplified unselection logic: unselect only the specified service. 
+      // Dependencies will be automatically removed at generation time if no other service requires them.
     }
     setSelectedServices(newSelected);
   };
@@ -114,151 +98,186 @@ export const ConfigProvider = ({ children }) => {
     setConfigValues(prev => ({ ...prev, [fieldName]: generateRandomString() }));
   };
 
+  // --- Effects for automatic configuration ---
   useEffect(() => {
     const newValues = {};
     let needsUpdate = false;
+
+    const allServicesInStack = new Set(selectedServices);
     selectedServices.forEach(sKey => {
+        getRequiredDependencies(sKey, SERVICE_MANIFEST).forEach(dep => allServicesInStack.add(dep));
+    });
+
+    allServicesInStack.forEach(sKey => {
       const service = SERVICE_MANIFEST[sKey];
-      if (service?.env_vars) {
+      if (!service) return;
+
+      // Auto-generate secrets
+      if (service.env_vars) {
         service.env_vars.forEach(envVar => {
-          const varName = envVar.link_to || envVar.name;
-          if (envVar.generator && !configValues[varName]) {
-            newValues[varName] = generateRandomString();
+          if (envVar.type === 'secret' && !configValues[envVar.link_to]) {
+            newValues[envVar.link_to] = generateRandomString();
             needsUpdate = true;
           }
         });
       }
-      if (service?.expose) {
+
+      // Set default deployment values for selected (non-internal) services
+      if (!service.internal && service.deployment?.expose) {
         const exposeKey = `${sKey}_expose_traefik`;
         if (configValues[exposeKey] === undefined) {
-          newValues[exposeKey] = service.expose_traefik !== undefined ? service.expose_traefik : true;
+          newValues[exposeKey] = true; // Default to exposed if exposable
           needsUpdate = true;
         }
         const subdomainKey = `${sKey}_custom_subdomain`;
         if (configValues[subdomainKey] === undefined) {
-          newValues[subdomainKey] = service.custom_subdomain || '';
+          newValues[subdomainKey] = service.deployment.default_subdomain || sKey;
           needsUpdate = true;
         }
       }
     });
 
-    const currentConfigKeys = Object.keys(configValues);
-    for(const key of currentConfigKeys) {
-        if (key.endsWith('_expose_traefik') || key.endsWith('_custom_subdomain')) {
-            const sKey = key.split('_')[0];
-            if (!selectedServices.has(sKey)) {
-                delete configValues[key];
-                needsUpdate = true;
-            }
-        }
-    }
-
     if (needsUpdate) {
       setConfigValues(prev => ({ ...prev, ...newValues }));
     }
-  }, [selectedServices, configValues]);
-
-  const generateTraefikYamlContent = (configValues) => {
-    return `api:
-  dashboard: true
-  insecure: true
-
-entryPoints:
-  web:
-    address: ":80"
-    http:
-      redirections:
-        entryPoint:
-          to: "websecure"
-          scheme: "https"
-  websecure:
-    address: ":443"
-
-providers:
-  docker:
-    endpoint: "unix:///var/run/docker.sock"
-    exposedByDefault: false
-  file:
-    directory: "/etc/traefik/dynamic/"
-    watch: true
-
-certificatesResolvers:
-  myresolver:
-    acme:
-      email: "${configValues.ACME_EMAIL}"
-      storage: "/etc/traefik/acme.json"
-      httpChallenge:
-        entryPoint: "web"
-`;
-  };
+  }, [selectedServices]);
 
 
-
+  // --- Package Generation ---
   const generatePackage = async () => {
-    if (!configValues.DOMAIN || !configValues.ACME_EMAIL) {
-      alert("Veuillez remplir le nom de domaine et l'email (Configuration Générale).");
+    if (selectedServices.size === 0) {
+        alert("Veuillez sélectionner au moins un service.");
+        return;
+    }
+    if (configValues.DOMAIN && !configValues.ACME_EMAIL) {
+      alert("Un email est requis pour le SSL (ACME) lorsque vous spécifiez un domaine.");
       return;
     }
+
     const zip = new JSZip();
-    const finalProfiles = Array.from(selectedServices).join(',');
-    let envContent = "# Configuration generated by HomeLab Configurator\n";
-    envContent += "# Date: " + new Date().toLocaleString() + "\n\n";
-    envContent += `COMPOSE_PROFILES=${finalProfiles}\n\n`;
-    for (const key in configValues) {
-      if (!key.endsWith('_PATH') && key !== 'PROJECT_BASE_DIR') {
-        envContent += `${key}=${configValues[key]}\n`;
-      }
+    
+    // --- Collect all required secrets ---
+    const requiredSecrets = new Set();
+    const allServicesToGenerate = new Set(selectedServices);
+    selectedServices.forEach(key => {
+        getRequiredDependencies(key, SERVICE_MANIFEST).forEach(dep => allServicesToGenerate.add(dep));
+    });
+
+    allServicesToGenerate.forEach(serviceKey => {
+        const serviceDef = SERVICE_MANIFEST[serviceKey];
+        if (serviceDef?.env_vars) {
+            serviceDef.env_vars.forEach(env => {
+                if(env.type === 'secret' && env.link_to) {
+                    requiredSecrets.add(env.link_to);
+                }
+            });
+        }
+    });
+    
+    // --- Generate .env file ---
+    let envContent = `# Configuration generated by Homelab Configurator\n`;
+    envContent += `# Date: ${new Date().toLocaleString()}\n\n`;
+    envContent += `### Global Settings ###\n`;
+    envContent += `TZ=${configValues.TZ}\n`;
+    envContent += `PUID=${configValues.PUID}\n`;
+    envContent += `PGID=${configValues.PGID}\n`;
+    envContent += `PROJECT_BASE_DIR=${configValues.PROJECT_BASE_DIR}\n`;
+    envContent += `CONFIG_PATH=${configValues.CONFIG_PATH}\n`;
+    envContent += `DATA_PATH=${configValues.DATA_PATH}\n`;
+    
+    if (configValues.DOMAIN) {
+      envContent += `DOMAIN=${configValues.DOMAIN}\n`;
     }
-    envContent += `\n# --- Paths ---\n`;
-    for (const pathKey of Object.keys(defaultPaths)) {
-      envContent += `${pathKey}=${configValues[pathKey] || defaultPaths[pathKey]}\n`;
+    if (configValues.ACME_EMAIL) {
+      envContent += `ACME_EMAIL=${configValues.ACME_EMAIL}\n`;
     }
+
+    envContent += `\n### Generated Secrets ###\n`;
+    requiredSecrets.forEach(secretKey => {
+        envContent += `${secretKey}=${configValues[secretKey] || ''}\n`;
+    });
+
     zip.file('.env', envContent);
-    zip.file('start.sh', "#!/bin/bash\necho \"Starting HomeLab Media Server...\"\ndocker compose -p homedia --env-file ./.env up -d\necho \"Stack started!\"\n", { unixPermissions: 0o755 });
-    zip.file('start.bat', "@echo off\necho \"Starting HomeLab Media Server...\"\ndocker compose -p homedia --env-file ./.env up -d\npause\n");
-    const readmeContent = `...`; // Full README content here
-    const dockerComposeContent = generateDockerComposeContent(selectedServices, configValues);
+
+    // --- Generate docker-compose.yml ---
+    const dockerComposeContent = generateDockerCompose(Array.from(selectedServices), configValues); // Convert Set to Array
     zip.file('docker-compose.yml', dockerComposeContent);
 
-    // Generate Traefik static config and acme.json if Traefik is used
-    if (configValues.DOMAIN && configValues.ACME_EMAIL) {
-      const traefikYamlContent = generateTraefikYamlContent(configValues);
-      zip.file('traefik.yml', traefikYamlContent);
-      zip.file('acme.json', ''); // Empty file for ACME storage
-    }
-
-    zip.file('README.txt', readmeContent);
+    // --- Add helper scripts ---
+    const projectName = configValues.PROJECT_NAME || 'homelab';
+    zip.file('start.sh', `#!/bin/bash\necho "Starting ${projectName} stack..."\ndocker compose -p ${projectName} --env-file ./.env up -d\necho "Stack started!"\n`, { unixPermissions: 0o755 });
+    zip.file('stop.sh', `#!/bin/bash\necho "Stopping ${projectName} stack..."\ndocker compose -p ${projectName} down\necho "Stack stopped."\n`, { unixPermissions: 0o755 });
+    
+    // --- Generate and Download ZIP ---
     try {
       const content = await zip.generateAsync({ type: 'blob' });
-      saveAs(content, 'configuration.zip');
+      saveAs(content, `${projectName}_configuration.zip`);
     } catch (error) {
       console.error("ZIP Error:", error);
+      alert("Une erreur est survenue lors de la création de l'archive ZIP.");
     }
   };
+
+  // --- Configuration Management (Save/Load) ---
+  const saveConfig = () => {
+    const configToSave = {
+      selectedServices: Array.from(selectedServices),
+      configValues: configValues,
+    };
+    const blob = new Blob([JSON.stringify(configToSave, null, 2)], { type: 'application/json' });
+    saveAs(blob, 'homelab_config.json');
+  };
+
+  const loadConfig = (file) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const loadedConfig = JSON.parse(event.target.result);
+        if (loadedConfig.selectedServices && loadedConfig.configValues) {
+          setSelectedServices(new Set(loadedConfig.selectedServices));
+          setConfigValues(loadedConfig.configValues);
+          alert("Configuration chargée avec succès !");
+        } else {
+          alert("Fichier de configuration invalide.");
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement de la configuration:", error);
+        alert("Erreur lors de la lecture du fichier de configuration.");
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // --- Memoized Values for Provider ---
+  const servicesByGroup = useMemo(() => {
+    const groups = {};
+    for (const groupKey in SERVICE_GROUPS) {
+      groups[groupKey] = {
+        ...SERVICE_GROUPS[groupKey],
+        services: []
+      };
+    }
+    for (const serviceKey in SERVICE_MANIFEST) {
+      const service = SERVICE_MANIFEST[serviceKey];
+      if (!service.internal && groups[service.group]) {
+          groups[service.group].services.push({ key: serviceKey, ...service });
+      }
+    }
+    return groups;
+  }, []);
 
   const value = {
     selectedServices,
     configValues,
-    pathMode,
-    togglePathMode,
-    defaultPaths,
-    servicesByGroup: useMemo(() => {
-        const groups = {};
-        for (const serviceKey in SERVICE_MANIFEST) {
-          const service = SERVICE_MANIFEST[serviceKey];
-          if (!service.internal) {
-              if (!groups[service.group]) {
-                  groups[service.group] = [];
-              }
-              groups[service.group].push({ key: serviceKey, ...service });
-          }
-        }
-        return groups;
-      }, []),
+    servicesByGroup,
+    isDarkMode,
+    toggleDarkMode,
     updateSelection,
     handleInputChange,
     setRandomValue,
-    generatePackage
+    generatePackage,
+    saveConfig,
+    loadConfig,
   };
 
   return (

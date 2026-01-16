@@ -53,6 +53,29 @@ services:
     # ... (same configuration as before, no profiles)
 
   # =============================================================================
+  # 🎨 DASHBOARDS PROFILE
+  # =============================================================================
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    profiles: ["dashboards", "homepage"]
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - ${CONFIG_PATH}/homepage:/app/config
+    networks:
+      - homelab
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.homepage.rule=Host(`homepage.${DOMAIN}`)"
+      - "traefik.http.routers.homepage.entrypoints=websecure"
+      - "traefik.http.routers.homepage.tls.certresolver=myresolver"
+      - "traefik.http.services.homepage.loadbalancer.server.port=3000"
+    restart: unless-stopped
+
+  # =============================================================================
   # ⬇️ DOWNLOAD PROFILE
   # =============================================================================
   gluetun:
@@ -212,7 +235,7 @@ services:
       - WEBSOCKET_ENABLED=true  # Required for some clients
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.vaultwarden.rule=Host(ault.)"
+      - "traefik.http.routers.vaultwarden.rule=Host(ault.)"
       - "traefik.http.routers.vaultwarden.entrypoints=websecure"
       - "traefik.http.routers.vaultwarden.tls.certresolver=letsencrypt"
       - "traefik.http.routers.vaultwarden.middlewares=authentik@docker"
@@ -248,7 +271,7 @@ services:
       - BASE_URL=https://recipes.
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.mealie.rule=Host(ecipes.)"
+      - "traefik.http.routers.mealie.rule=Host(ecipes.)"
       - "traefik.http.routers.mealie.entrypoints=websecure"
       - "traefik.http.routers.mealie.tls.certresolver=letsencrypt"
       - "traefik.http.routers.mealie.middlewares=authentik@docker"
@@ -283,7 +306,7 @@ services:
       - 'CRON_MIN'='*/20'
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.freshrss.rule=Host(ss.)"
+      - "traefik.http.routers.freshrss.rule=Host(ss.)"
       - "traefik.http.routers.freshrss.entrypoints=websecure"
       - "traefik.http.routers.freshrss.tls.certresolver=letsencrypt"
       - "traefik.http.routers.freshrss.middlewares=authentik@docker"
@@ -473,7 +496,7 @@ services:
       - TRUSTED_PROXIES=**
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.firefly.rule=Host(inance.)"
+      - "traefik.http.routers.firefly.rule=Host(inance.)"
       - "traefik.http.services.firefly.loadbalancer.server.port=8080"
       - "traefik.http.routers.firefly.middlewares=authentik@docker"
     restart: 
@@ -549,7 +572,7 @@ services:
       - /bookstack:/config
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.bookstack.rule=Host(ookstack.)"
+      - "traefik.http.routers.bookstack.rule=Host(ookstack.)"
       - "traefik.http.routers.bookstack.entrypoints=websecure"
       - "traefik.http.routers.bookstack.tls.certresolver=letsencrypt"
       - "traefik.http.routers.bookstack.middlewares=authentik@docker"
@@ -693,7 +716,7 @@ services:
       - AGH_PASSWORD=
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.adguardhome.rule=Host(dguard.)"
+      - "traefik.http.routers.adguardhome.rule=Host(dguard.)"
       - "traefik.http.routers.adguardhome.entrypoints=websecure"
       - "traefik.http.routers.adguardhome.tls.certresolver=letsencrypt"
       - "traefik.http.routers.adguardhome.middlewares=authentik@docker"
@@ -1062,6 +1085,9 @@ pm.)"
       - "traefik.http.routers.shlink.tls.certresolver=letsencrypt"
       - "traefik.http.routers.shlink.middlewares=authentik@docker"
       - "traefik.http.services.shlink.loadbalancer.server.port=8080" # Shlink's internal API port
+    networks:
+      - traefik_public
+      - homelab
     restart: 
     deploy:
       resources: {limits: {cpus: '0.75', memory: '256M'}, reservations: {cpus: '0.1', memory: '64M'}}
