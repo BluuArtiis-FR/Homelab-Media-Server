@@ -2,7 +2,7 @@ import { createContext, useState, useMemo, useEffect } from 'react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { SERVICE_GROUPS, SERVICE_MANIFEST } from '../services';
-import { generateDockerCompose } from '../utils/dockerComposeGenerator.new.js';
+import { generateDockerCompose } from '../utils/dockerComposeGenerator.js';
 
 const ConfigContext = createContext();
 
